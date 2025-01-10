@@ -22,20 +22,18 @@ const typeColors = {
   dragon: "#7038F8",
   dark: "#705848",
   fairy: "#EE99AC",
-  stellar: "#FFD700", // Custom type for 'stellar'
-  default: "#A8A878", // Fallback color
+  stellar: "#FFD700",
+  default: "#A8A878",
 };
 
 export const PokemonDetails = ({ pokemonList }) => {
   const { pokemonId } = useParams();
   const navigate = useNavigate();
 
-  // Initialize AOS animations
   useEffect(() => {
     AOS.init();
   }, []);
 
-  // Find the selected Pokémon based on its number
   const pokemonData = pokemonList.find(
     (pokemon) => pokemon.id === parseInt(pokemonId)
   );
@@ -54,7 +52,7 @@ export const PokemonDetails = ({ pokemonList }) => {
         {/* Left side: Pokémon Image */}
         <figure
           className="pokemon-image-container"
-          data-aos="zoom-in"
+          data-aos="fade-up"
           data-aos-duration="1200"
         >
           <img
