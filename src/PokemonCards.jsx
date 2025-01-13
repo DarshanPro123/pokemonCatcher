@@ -37,21 +37,27 @@ export const PokemonCards = ({ pokemonData, number }) => {
 
       <div className="grid-three-cols">
         <div className="pokemon-info">
-          <p>{pokemonData.base_experience}</p>
-          <span> Experience:</span>
-        </div>
-        <div className="pokemon-info">
-          <p>{pokemonData.stats[1].base_stat}</p>
-          <span>Attack:</span>
+          <p>
+            <span> Experience:</span>
+            {pokemonData.base_experience}
+          </p>
         </div>
         <div className="pokemon-info">
           <p>
+            <span>Attack:</span>
+            {pokemonData.stats[1].base_stat}
+          </p>
+        </div>
+        <div className="pokemon-info">
+          <p>
+            <span>Abilities:</span>
             {pokemonData.abilities
-              .map((abilityInfo) => abilityInfo.ability.name)
+              .map((abilityInfo) =>
+                abilityInfo.ability.name.split("-").join(" ")
+              )
               .slice(0, 1)
               .join(", ")}
           </p>
-          <span> Abilities: </span>
         </div>
       </div>
     </li>
