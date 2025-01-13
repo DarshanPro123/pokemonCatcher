@@ -6,32 +6,35 @@ import { PokemonTypes } from "./PokemonTypes";
 
 export const App = () => {
   const [pokemonList, setPokemonList] = useState([]);
+  const [filteredPokemon, setFilteredPokemon] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
-  const limit = 20; // Number of Pokémon per page
+  const limit = 40; // Number of Pokémon per page
 
-  const fetchPokemonList = async (page) => {
+  // Fetch all Pokémon for search functionality
+  const fetchAllPokemon = async () => {
     try {
       setLoading(true);
-      const offset = (page - 1) * limit;
-      const pokemonPromises = Array.from({ length: limit }, (_, index) =>
-        fetch(`https://pokeapi.co/api/v2/pokemon/${offset + index + 1}`).then(
-          (res) => res.json()
-        )
+      const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1000");
+      const data = await res.json();
+      const detailedPromises = data.results.map((pokemon) =>
+        fetch(pokemon.url).then((res) => res.json())
       );
-      const fetchedPokemon = await Promise.all(pokemonPromises);
-      setPokemonList(fetchedPokemon);
+      const allPokemon = await Promise.all(detailedPromises);
+      setPokemonList(allPokemon);
+      setFilteredPokemon(allPokemon);
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching Pokémon data:", error);
+      console.error("Error fetching all Pokémon data:", error);
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPokemonList(currentPage);
-  }, [currentPage]);
+    fetchAllPokemon();
+  }, []);
 
   const handleNextPage = () => setCurrentPage((prev) => prev + 1);
   const handlePrevPage = () => {
@@ -40,10 +43,26 @@ export const App = () => {
     }
   };
 
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearch(query);
+
+    // Filter Pokémon list based on the search query
+    const filtered = pokemonList.filter((pokemon) =>
+      pokemon.name.toLowerCase().includes(query)
+    );
+    setFilteredPokemon(filtered);
+  };
+
+  // Pagination logic for filtered Pokémon
+  const paginatedPokemon = filteredPokemon.slice(
+    (currentPage - 1) * limit,
+    currentPage * limit
+  );
+
   return (
     <Router>
       <Routes>
-        {/* Main Pokémon List */}
         <Route
           path="/"
           element={
@@ -52,8 +71,22 @@ export const App = () => {
                 <h2>Loading...</h2>
               ) : (
                 <>
+                  <h1 className="">Pokémon List</h1>
+
+                  {/* Search Bar */}
+                  <div className="search-bar">
+                    <input
+                      type="text"
+                      placeholder="Search Pokémon by name"
+                      value={search}
+                      onChange={handleSearch}
+                      className="search-input"
+                    />
+                  </div>
+
+                  {/* Pokémon Cards */}
                   <ul className="cards">
-                    {pokemonList.map((pokemon, index) => (
+                    {paginatedPokemon.map((pokemon, index) => (
                       <PokemonCards
                         key={pokemon.id}
                         pokemonData={pokemon}
@@ -61,6 +94,8 @@ export const App = () => {
                       />
                     ))}
                   </ul>
+
+                  {/* Pagination */}
                   <div className="pagination">
                     <button
                       onClick={handlePrevPage}
@@ -70,7 +105,11 @@ export const App = () => {
                       Previous
                     </button>
                     <span>Page {currentPage}</span>
-                    <button onClick={handleNextPage} className="pagination-btn">
+                    <button
+                      onClick={handleNextPage}
+                      disabled={currentPage * limit >= filteredPokemon.length}
+                      className="pagination-btn"
+                    >
                       Next
                     </button>
                   </div>
