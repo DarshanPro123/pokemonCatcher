@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { PokemonCards } from "./PokemonCards";
+import { PokemonCards } from "./PokemonCards/PokemonCards";
 import { PokemonDetails } from "./PokemonDetails";
 import { PokemonTypes } from "./PokemonTypes";
 
 export const App = () => {
   const [pokemonList, setPokemonList] = useState([]);
-  const [filteredPokemon, setFilteredPokemon] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [displayedPokemon, setDisplayedPokemon] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState("");
 
-  const limit = 40; // Number of Pokémon per page
+  const limit = 20;
 
   // Fetch all Pokémon for search functionality
   const fetchAllPokemon = async () => {
@@ -24,10 +24,10 @@ export const App = () => {
       );
       const allPokemon = await Promise.all(detailedPromises);
       setPokemonList(allPokemon);
-      setFilteredPokemon(allPokemon);
+      setDisplayedPokemon(allPokemon.slice(0, limit)); // Display the first batch
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching all Pokémon data:", error);
+      // console.error("Error fetching all Pokémon data:", error);
       setLoading(false);
     }
   };
@@ -35,13 +35,6 @@ export const App = () => {
   useEffect(() => {
     fetchAllPokemon();
   }, []);
-
-  const handleNextPage = () => setCurrentPage((prev) => prev + 1);
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
 
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
@@ -51,14 +44,18 @@ export const App = () => {
     const filtered = pokemonList.filter((pokemon) =>
       pokemon.name.toLowerCase().includes(query)
     );
-    setFilteredPokemon(filtered);
+    setDisplayedPokemon(filtered.slice(0, limit)); // Reset displayed list to the first batch
   };
 
-  // Pagination logic for filtered Pokémon
-  const paginatedPokemon = filteredPokemon.slice(
-    (currentPage - 1) * limit,
-    currentPage * limit
-  );
+  const handleLoadMore = () => {
+    setLoadingMore(true);
+    const nextBatch = pokemonList.slice(
+      displayedPokemon.length,
+      displayedPokemon.length + limit
+    );
+    setDisplayedPokemon((prev) => [...prev, ...nextBatch]);
+    setLoadingMore(false);
+  };
 
   return (
     <Router>
@@ -73,7 +70,7 @@ export const App = () => {
                 <>
                   <h1 className="">Pokémon List</h1>
 
-                  {/* Search Bar */}
+                  {/* Fixed Search Bar */}
                   <div className="search-bar">
                     <input
                       type="text"
@@ -86,33 +83,27 @@ export const App = () => {
 
                   {/* Pokémon Cards */}
                   <ul className="cards">
-                    {paginatedPokemon.map((pokemon, index) => (
+                    {displayedPokemon.map((pokemon, index) => (
                       <PokemonCards
                         key={pokemon.id}
                         pokemonData={pokemon}
-                        number={(currentPage - 1) * limit + index + 1}
+                        number={index + 1}
                       />
                     ))}
                   </ul>
 
-                  {/* Pagination */}
-                  <div className="pagination">
-                    <button
-                      onClick={handlePrevPage}
-                      disabled={currentPage === 1}
-                      className="pagination-btn"
-                    >
-                      Previous
-                    </button>
-                    <span>Page {currentPage}</span>
-                    <button
-                      onClick={handleNextPage}
-                      disabled={currentPage * limit >= filteredPokemon.length}
-                      className="pagination-btn"
-                    >
-                      Next
-                    </button>
-                  </div>
+                  {/* Load More Button */}
+                  {displayedPokemon.length < pokemonList.length && (
+                    <div className="load-more">
+                      <button
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                        className="load-more-btn"
+                      >
+                        {loadingMore ? "Loading..." : "Load More"}
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </div>
